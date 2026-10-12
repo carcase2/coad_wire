@@ -1,0 +1,2291 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>⚡ COAD 배선 시뮬레이터 Pro v4.4</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&family=Outfit:wght@800;900&family=Pretendard:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-dark: #0a0e17;
+    --panel-bg: #141b2d;
+    --panel-border: #2a3652;
+    --accent-blue: #38bdf8;
+    --accent-green: #22c55e;
+    --accent-red: #ef4444;
+    --accent-yellow: #f59e0b;
+    --accent-mc: #ea580c;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0; padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    margin: 0; padding: 0;
+    overflow: hidden;
+    background-color: var(--bg-dark);
+    color: #f8fafc;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    touch-action: none;
+    display: flex; flex-direction: column;
+  }
+
+  /* ==========================================================================
+     [PC 전용 인터페이스 - 데스크톱 100% 무변경 원형 보존]
+     ========================================================================== */
+  #header-toolbox {
+    height: 72px; min-height: 72px;
+    background: #0f172a; border-bottom: 2px solid #1e293b;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 14px; gap: 12px; z-index: 50;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    touch-action: manipulation;
+  }
+
+  .brand-group { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .brand-logo-text {
+    font-family: 'Montserrat', 'Outfit', sans-serif;
+    font-weight: 900; font-size: 22px; letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #10b981 0%, #06b6d4 40%, #1e40af 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .brand-title { font-size: 13px; font-weight: 700; color: #94a3b8; display: flex; align-items: center; gap: 5px; }
+  .badge-pro { background: #0284c7; color: #fff; font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 800; letter-spacing: 0.5px; }
+
+  /* 10가지 배선 색상 빠른 팔레트 */
+  .color-bar-container {
+    display: flex; align-items: center; gap: 5px;
+    background: #1e293b; padding: 5px 10px; border-radius: 20px;
+    border: 1px solid #334155; flex-shrink: 0;
+  }
+  .color-dot {
+    width: 20px; height: 20px; border-radius: 50%;
+    cursor: pointer; border: 2px solid transparent;
+    transition: transform 0.12s, border-color 0.12s;
+    touch-action: manipulation;
+  }
+  .color-dot:hover { transform: scale(1.2); }
+  .color-dot.active {
+    border-color: #ffffff;
+    box-shadow: 0 0 10px rgba(255,255,255,0.9);
+    transform: scale(1.25);
+  }
+
+  /* 부품함 스크롤 영역 */
+  .toolbox-scroll-container {
+    display: flex; align-items: center; gap: 8px; overflow-x: auto; padding: 6px 4px;
+    flex: 1; -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin; scrollbar-color: #475569 #1e293b;
+    touch-action: pan-x;
+  }
+  .toolbox-scroll-container::-webkit-scrollbar { height: 6px; }
+  .toolbox-scroll-container::-webkit-scrollbar-track { background: #1e293b; border-radius: 3px; }
+  .toolbox-scroll-container::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+  .toolbox-scroll-container::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+  .tool-cat-divider { width: 2px; height: 32px; background: #334155; margin: 0 4px; flex-shrink: 0; }
+  
+  .cat-badge {
+    font-size: 11px; font-weight: 800; color: #94a3b8;
+    background: #1e293b; padding: 4px 8px; border-radius: 5px;
+    border: 1px solid #334155; white-space: nowrap; flex-shrink: 0;
+  }
+
+  .tool-btn {
+    height: 42px; padding: 0 12px; border-radius: 8px; border: 1px solid #334155;
+    background: #1e293b; color: #e2e8f0; font-size: 11.5px; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap;
+    transition: all 0.12s ease; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    touch-action: manipulation;
+  }
+  .tool-btn:hover { background: #283548; color: #fff; border-color: #475569; }
+  .tool-btn:active { transform: scale(0.96); }
+  .tool-btn.btn-pwr { border-left: 3px solid #f59e0b; }
+  .tool-btn.btn-ctrl { border-left: 3px solid #38bdf8; }
+  .tool-btn.btn-mc { border-left: 3px solid #ea580c; }
+  .tool-btn.btn-relay { border-left: 3px solid #a855f7; }
+  .tool-btn.btn-lamp { border-left: 3px solid #ef4444; }
+  .tool-btn.btn-sensor { border-left: 3px solid #10b981; }
+
+  /* 상단 액션 버튼 그룹 */
+  .header-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .action-btn {
+    height: 40px; padding: 0 12px; border-radius: 8px; border: none; font-size: 12px;
+    font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 5px;
+    transition: all 0.12s; white-space: nowrap;
+    touch-action: manipulation;
+  }
+
+  .mobile-only-text { display: none; }
+  .pc-only-text { display: inline; }
+
+  /* ✂️ 가위 배선 절단 모드 토글 버튼 */
+  .btn-cut-mode {
+    background: #1e293b; color: #cbd5e1; border: 1.5px solid #475569;
+  }
+  .btn-cut-mode:hover { background: #334155; color: #fff; }
+  .btn-cut-mode.active {
+    background: #dc2626 !important; color: #ffffff !important;
+    border-color: #f87171 !important;
+    box-shadow: 0 0 16px rgba(239, 68, 68, 0.85) !important;
+    animation: pulseCutBtn 0.9s infinite alternate;
+  }
+  @keyframes pulseCutBtn {
+    from { transform: scale(1); box-shadow: 0 0 10px rgba(239, 68, 68, 0.7); }
+    to { transform: scale(1.05); box-shadow: 0 0 22px rgba(239, 68, 68, 1); }
+  }
+
+  .btn-undo { background: #3b82f6; color: #fff; }
+  .btn-undo:hover { background: #2563eb; }
+  .btn-undo:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .btn-repair { background: #059669; color: #fff; }
+  .btn-repair:hover { background: #10b981; }
+  .btn-repair.has-burned {
+    background: #dc2626 !important;
+    animation: pulseBurnedBtn 0.9s infinite alternate;
+    box-shadow: 0 0 16px rgba(239, 68, 68, 0.8) !important;
+  }
+  @keyframes pulseBurnedBtn {
+    from { transform: scale(1); box-shadow: 0 0 10px rgba(220, 38, 38, 0.6); }
+    to { transform: scale(1.06); box-shadow: 0 0 22px rgba(239, 68, 68, 1); }
+  }
+
+  .btn-clear-wire { background: #475569; color: #fff; }
+  .btn-clear-wire:hover { background: #64748b; }
+  .btn-reset { background: #be123c; color: #fff; }
+  .btn-reset:hover { background: #e11d48; }
+
+  /* 2. 중앙 메인 배치 캔버스 */
+  #board-container {
+    flex: 1; width: 100%; position: relative; overflow: hidden;
+    background-color: #0b101d;
+    background-image:
+      linear-gradient(rgba(56, 189, 248, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(56, 189, 248, 0.08) 1px, transparent 1px),
+      linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+    touch-action: none;
+    transform-origin: center center;
+  }
+
+  #board-container.cut-mode-active {
+    box-shadow: inset 0 0 25px rgba(239, 68, 68, 0.35);
+  }
+
+  #nuclear-flash-screen {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    background: #ffffff; opacity: 0; pointer-events: none; z-index: 100;
+    mix-blend-mode: screen; transition: opacity 0.05s ease-out;
+  }
+
+  #watermark-layer {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 1; opacity: 0.08;
+  }
+
+  #fx-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 60; }
+
+  #wire-layer {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    z-index: 45; pointer-events: none;
+  }
+  #wire-layer path { fill: none !important; }
+
+  /* 💡 평소(배선 모드)에는 전선 클릭 판정 완전 차단 (오클릭/삭제 방지) */
+  .wire-hit-zone {
+    pointer-events: none;
+    stroke: transparent; stroke-width: 22;
+    transition: stroke 0.12s; stroke-linecap: round;
+  }
+
+  /* ✂️ 가위 절단 모드 활성화 시에만 전선 터치/클릭 활성화 및 붉은색 하이라이트 */
+  #board-container.cut-mode-active .wire-hit-zone {
+    pointer-events: stroke !important;
+    cursor: crosshair !important;
+  }
+  #board-container.cut-mode-active .wire-hit-zone:hover {
+    stroke: rgba(239, 68, 68, 0.75) !important;
+  }
+
+  .wire-outline-line { stroke: #ffffff; stroke-width: 7; stroke-linecap: round; }
+  .wire-core-line { stroke-width: 4; stroke-linecap: round; }
+
+  @keyframes wireFlowFwd { from { stroke-dashoffset: 28; } to { stroke-dashoffset: 0; } }
+  @keyframes wireFlowRev { from { stroke-dashoffset: 0; } to { stroke-dashoffset: 28; } }
+
+  .wire-flowing-fwd {
+    stroke-dasharray: 12 6 4 6 !important;
+    animation: wireFlowFwd 0.75s linear infinite !important;
+  }
+  .wire-flowing-rev {
+    stroke-dasharray: 12 6 4 6 !important;
+    animation: wireFlowRev 0.75s linear infinite !important;
+  }
+
+  /* 🎯 중앙 앵커 조작점 (transform scale 제거 -> 좌표 튐 원천 방지) */
+  .wire-anchor-group {
+    pointer-events: all; cursor: grab; touch-action: none;
+  }
+  .wire-anchor-hit { fill: transparent; }
+  .wire-anchor-dot {
+    fill: #38bdf8; stroke: #ffffff; stroke-width: 2.5;
+    transition: fill 0.15s, stroke-width 0.15s;
+  }
+  .wire-anchor-group:hover .wire-anchor-dot {
+    fill: #f59e0b;
+    stroke-width: 3.5;
+    filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.9));
+  }
+  .wire-anchor-group:active { cursor: grabbing; }
+
+  #board-container.cut-mode-active .wire-anchor-group {
+    cursor: crosshair;
+  }
+  #board-container.cut-mode-active .wire-anchor-group:hover .wire-anchor-dot {
+    fill: #ef4444 !important;
+    stroke-width: 3.5;
+    filter: drop-shadow(0 0 8px rgba(239, 68, 68, 1)) !important;
+  }
+
+  /* 3. 기구 카드 */
+  .device-module {
+    position: absolute; background: #131b2e; border: 2px solid #293856;
+    border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    z-index: 10; display: flex; flex-direction: column; overflow: hidden;
+    transition: border-color 0.25s, box-shadow 0.25s;
+    touch-action: none;
+  }
+
+  .device-header {
+    height: 34px; background: #1e293b; border-bottom: 1px solid #334155;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 10px; cursor: move; flex-shrink: 0; touch-action: none;
+  }
+  .device-header-left { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; color: #f1f5f9; }
+  .dev-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dev-btn-close {
+    background: transparent; border: none; color: #64748b; font-size: 16px;
+    font-weight: 800; cursor: pointer; padding: 2px 6px; border-radius: 4px;
+    touch-action: manipulation;
+  }
+  .dev-btn-close:hover { color: #f43f5e; background: rgba(244, 63, 94, 0.15); }
+
+  .device-body {
+    flex: 1; padding: 10px; display: flex; flex-direction: column;
+    justify-content: space-between; align-items: center; gap: 6px; position: relative;
+  }
+
+  .term-row { display: flex; justify-content: space-around; width: 100%; align-items: center; }
+  .term-unit {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    position: relative; min-width: 44px;
+  }
+  .term-label {
+    font-size: 9.5px; font-weight: 900; color: #94a3b8;
+    text-align: center; white-space: nowrap; letter-spacing: -0.2px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+  }
+
+  .term {
+    width: 17px; height: 17px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #e2e8f0, #475569);
+    border: 2px solid #1e293b; box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    position: relative; cursor: crosshair; transition: all 0.15s;
+    touch-action: none;
+  }
+  .term::before {
+    content: ''; position: absolute; top: 50%; left: 50%; width: 9px; height: 2px;
+    background: #1e293b; transform: translate(-50%, -50%) rotate(45deg);
+  }
+  .term::after {
+    content: ''; position: absolute; top: 50%; left: 50%; width: 44px; height: 44px;
+    transform: translate(-50%, -50%); border-radius: 50%; background: transparent;
+  }
+  .term:hover { transform: scale(1.25); border-color: #38bdf8; box-shadow: 0 0 10px #38bdf8; }
+  .term.selected-anchor { border-color: #f59e0b; box-shadow: 0 0 12px #f59e0b; transform: scale(1.3); }
+
+  .ctrl-center-box {
+    width: 100%; background: #0c1322; border: 1px solid #1e293b;
+    border-radius: 8px; padding: 6px 8px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 4px;
+  }
+  .ctrl-status-text { font-size: 11px; font-weight: 800; color: #64748b; }
+
+  .ui-toggle-btn {
+    padding: 6px 14px; border-radius: 6px; font-size: 11px; font-weight: 800;
+    cursor: pointer; border: 1px solid #334155; background: #1e293b; color: #cbd5e1;
+    transition: all 0.15s;
+    touch-action: manipulation;
+  }
+  .ui-toggle-btn:hover { background: #334155; color: #fff; }
+  .ui-toggle-btn.active-on { background: #059669; border-color: #10b981; color: #fff; box-shadow: 0 0 8px rgba(16,185,129,0.5); }
+  .ui-toggle-btn.active-trip { background: #dc2626; border-color: #ef4444; color: #fff; animation: blinkTrip 0.6s infinite alternate; }
+
+  @keyframes blinkTrip { from { opacity: 1; } to { opacity: 0.6; } }
+
+  .module-active-ac { border-color: #38bdf8 !important; box-shadow: 0 0 25px rgba(56,189,248,0.45), 0 0 80px rgba(56,189,248,0.2) !important; }
+  .module-active-dc { border-color: #10b981 !important; box-shadow: 0 0 25px rgba(16,185,129,0.45), 0 0 80px rgba(16,185,129,0.2) !important; }
+  .module-active-mc { border-color: #ea580c !important; box-shadow: 0 0 28px rgba(234,88,12,0.5), 0 0 85px rgba(234,88,12,0.25) !important; }
+  .module-active-alarm { border-color: #ef4444 !important; box-shadow: 0 0 30px rgba(239,68,68,0.55), 0 0 90px rgba(239,68,68,0.3) !important; }
+
+  @keyframes megaEarthquake {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    10% { transform: translate(-14px, 12px) rotate(-2deg); }
+    20% { transform: translate(16px, -14px) rotate(2.5deg); }
+    30% { transform: translate(-12px, -10px) rotate(-1.8deg); }
+    40% { transform: translate(14px, 10px) rotate(1.5deg); }
+    50% { transform: translate(-10px, 8px) rotate(-1deg); }
+    60% { transform: translate(8px, -6px) rotate(1deg); }
+    70% { transform: translate(-6px, 4px) rotate(-0.5deg); }
+    80% { transform: translate(4px, -3px) rotate(0.4deg); }
+    90% { transform: translate(-2px, 2px) rotate(-0.2deg); }
+    100% { transform: translate(0, 0) rotate(0deg); }
+  }
+  .mega-earthquake { animation: megaEarthquake 0.9s cubic-bezier(0.36, 0.07, 0.19, 0.97) both !important; }
+
+  @keyframes tripShake {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    20% { transform: translate(-5px, 4px) rotate(-2deg); }
+    40% { transform: translate(5px, -4px) rotate(2deg); }
+    60% { transform: translate(-4px, -3px) rotate(-1deg); }
+    80% { transform: translate(3px, 3px) rotate(1deg); }
+    100% { transform: translate(0, 0) rotate(0deg); }
+  }
+  .trip-shake { animation: tripShake 0.45s ease-in-out !important; }
+
+  .burned-overlay {
+    position: absolute; inset: 0; background: radial-gradient(circle at center, rgba(35, 10, 10, 0.94) 0%, rgba(5, 5, 8, 0.98) 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+    padding: 10px 8px; z-index: 25; color: #ef4444; font-weight: 900; font-size: 12px;
+    border: 3px solid #dc2626; border-radius: 10px; pointer-events: all;
+    box-shadow: inset 0 0 35px rgba(239, 68, 68, 0.6), 0 0 25px rgba(220, 38, 38, 0.8);
+    backdrop-filter: blur(2px);
+  }
+  .burned-overlay span { font-size: 30px; filter: drop-shadow(0 0 10px #f97316); animation: burnIconFlicker 0.4s infinite alternate; }
+
+  @keyframes burnIconFlicker {
+    from { transform: scale(1) rotate(-3deg); filter: drop-shadow(0 0 8px #ef4444); }
+    to { transform: scale(1.18) rotate(3deg); filter: drop-shadow(0 0 16px #f59e0b); }
+  }
+
+  .btn-single-repair {
+    width: 90%; height: 32px; background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    border: 1px solid #34d399; border-radius: 6px; color: #ffffff; font-size: 11px;
+    font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    gap: 4px; box-shadow: 0 0 14px rgba(16, 185, 129, 0.5); transition: all 0.15s;
+    touch-action: manipulation;
+  }
+  .btn-single-repair:hover { transform: scale(1.04); background: #10b981; }
+  .btn-single-repair:active { transform: scale(0.96); }
+
+  .lamp-dome {
+    width: 38px; height: 38px; border-radius: 50%; background: #334155;
+    border: 3px solid #1e293b; transition: all 0.2s; position: relative;
+  }
+  .lamp-dome.lit-red { background: #ef4444; box-shadow: 0 0 25px #ef4444, inset 0 0 8px #fff; }
+
+  .tower-stack { display: flex; flex-direction: column; gap: 3px; align-items: center; }
+  .tower-tier {
+    width: 34px; height: 16px; border-radius: 4px; background: #1e293b;
+    border: 1px solid #334155; transition: all 0.2s;
+  }
+  .tier-red.lit { background: #ef4444; box-shadow: 0 0 16px #ef4444; border-color: #fca5a5; }
+  .tier-yellow.lit { background: #f59e0b; box-shadow: 0 0 16px #f59e0b; border-color: #fde68a; }
+  .tier-green.lit { background: #10b981; box-shadow: 0 0 16px #10b981; border-color: #a7f3d0; }
+
+  .mc-crossbar {
+    width: 90%; height: 22px; background: #1e293b; border-radius: 4px;
+    border: 1.5px solid #475569; display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 800; color: #94a3b8; transition: all 0.15s;
+  }
+  .mc-crossbar.closed {
+    background: #ea580c; color: #ffffff; border-color: #fb923c;
+    box-shadow: 0 0 16px #ea580c, inset 0 0 4px #fff;
+  }
+
+  /* 토스트 알림 (화면 하단 20px - 시야를 절대 가리지 않는 슬림 팝업) */
+  #toast-msg {
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px);
+    background: rgba(15, 23, 42, 0.95); border: 1px solid #38bdf8;
+    color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 12px; font-weight: 700;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6); z-index: 100; pointer-events: none;
+    opacity: 0; transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s;
+  }
+  #toast-msg.show {
+    transform: translateX(-50%) translateY(0); opacity: 1;
+  }
+
+  /* ==========================================================================
+     📱 [모바일 전용 최적화 인터페이스] - PC 스타일에는 일체 영향 없음!
+     ========================================================================== */
+  @media (max-width: 768px) {
+    #header-toolbox {
+      height: auto !important;
+      min-height: 96px !important;
+      display: grid !important;
+      grid-template-columns: auto 1fr !important;
+      grid-template-rows: 38px 50px !important;
+      padding: 6px 10px 6px 10px !important;
+      gap: 4px 8px !important;
+      align-items: center !important;
+    }
+
+    .brand-group {
+      grid-column: 1 / 2 !important;
+      grid-row: 1 / 2 !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 5px !important;
+    }
+    .brand-logo-text { font-size: 18px !important; }
+    .brand-title { display: none !important; }
+    .badge-pro { font-size: 8px !important; padding: 1px 4px !important; }
+
+    .header-actions {
+      grid-column: 2 / 3 !important;
+      grid-row: 1 / 2 !important;
+      display: flex !important;
+      justify-content: flex-end !important;
+      align-items: center !important;
+      gap: 3.5px !important;
+    }
+    .action-btn {
+      height: 32px !important;
+      padding: 0 7px !important;
+      font-size: 10.5px !important;
+      border-radius: 5px !important;
+      gap: 2px !important;
+    }
+    .pc-only-text { display: none !important; }
+    .mobile-only-text { display: inline !important; }
+
+    .color-bar-container {
+      grid-column: 1 / 2 !important;
+      grid-row: 2 / 3 !important;
+      display: grid !important;
+      grid-template-columns: repeat(5, 17px) !important;
+      grid-template-rows: repeat(2, 17px) !important;
+      gap: 3px !important;
+      padding: 4px 6px !important;
+      border-radius: 8px !important;
+      flex-shrink: 0 !important;
+    }
+    .color-dot {
+      width: 17px !important;
+      height: 17px !important;
+    }
+
+    .toolbox-scroll-container {
+      grid-column: 2 / 3 !important;
+      grid-row: 2 / 3 !important;
+      width: 100% !important;
+      min-width: 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+      padding: 2px 0 !important;
+      scrollbar-width: thin !important;
+      scrollbar-color: #475569 transparent !important;
+    }
+    .toolbox-scroll-container::-webkit-scrollbar {
+      height: 3px !important;
+      display: block !important;
+    }
+    .toolbox-scroll-container::-webkit-scrollbar-thumb {
+      background: #475569 !important;
+      border-radius: 2px !important;
+    }
+
+    .tool-btn {
+      height: 38px !important;
+      padding: 0 10px !important;
+      font-size: 11px !important;
+      border-radius: 6px !important;
+      flex-shrink: 0 !important;
+      gap: 4px !important;
+    }
+    .cat-badge {
+      font-size: 10px !important;
+      padding: 3px 6px !important;
+      flex-shrink: 0 !important;
+    }
+    .tool-cat-divider {
+      height: 24px !important;
+      margin: 0 2px !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header id="header-toolbox">
+  <div class="brand-group">
+    <div class="brand-logo-text">COAD</div>
+    <div class="brand-title">
+      배선 시뮬레이터 <span class="badge-pro">v4.4</span>
+    </div>
+  </div>
+
+  <div class="color-bar-container" id="color-palette-bar"></div>
+
+  <div class="toolbox-scroll-container">
+    <span class="cat-badge">전원</span>
+    <button class="tool-btn btn-pwr" onclick="spawnDevice('outlet')">🔌 콘센트 (220V)</button>
+    <button class="tool-btn btn-pwr" onclick="spawnDevice('mcb')">⚡ 차단기 (MCB)</button>
+    <button class="tool-btn btn-pwr" onclick="spawnDevice('smps')">🔄 SMPS (24V)</button>
+
+    <div class="tool-cat-divider"></div>
+    <span class="cat-badge">조작</span>
+    <button class="tool-btn btn-ctrl" onclick="spawnDevice('pushbtn')">🔘 푸시버튼</button>
+    <button class="tool-btn btn-ctrl" onclick="spawnDevice('selector')">🔀 3점 셀렉터</button>
+    <button class="tool-btn btn-ctrl" onclick="spawnDevice('remote_ac')">📡 리모컨(AC)</button>
+    <button class="tool-btn btn-ctrl" onclick="spawnDevice('remote_dc')">📡 리모컨(DC)</button>
+
+    <div class="tool-cat-divider"></div>
+    <span class="cat-badge">계전기</span>
+    <button class="tool-btn btn-mc" onclick="spawnDevice('mc22b')">🧲 LS MC-22b</button>
+    <button class="tool-btn btn-relay" onclick="spawnDevice('relay_ac')">⚙️ AC릴레이</button>
+    <button class="tool-btn btn-relay" onclick="spawnDevice('relay_dc')">⚙️ DC릴레이</button>
+
+    <div class="tool-cat-divider"></div>
+    <span class="cat-badge">경광등</span>
+    <button class="tool-btn btn-lamp" onclick="spawnDevice('alarm_ac')">🚨 경광등(AC)</button>
+    <button class="tool-btn btn-lamp" onclick="spawnDevice('alarm_dc')">🚨 경광등(DC)</button>
+    <button class="tool-btn btn-lamp" onclick="spawnDevice('tower_2c_ac')">🚦 2색타워(AC)</button>
+    <button class="tool-btn btn-lamp" onclick="spawnDevice('tower_2c_dc')">🚦 2색타워(DC)</button>
+    <button class="tool-btn btn-lamp" onclick="spawnDevice('tower_3c_ac')">🚦 3색타워(AC)</button>
+    <button class="tool-btn btn-lamp" onclick="spawnDevice('tower_3c_dc')">🚦 3색타워(DC)</button>
+
+    <div class="tool-cat-divider"></div>
+    <span class="cat-badge">센서</span>
+    <button class="tool-btn btn-sensor" onclick="spawnDevice('sensor_npn')">👁️ 센서(NPN)</button>
+    <button class="tool-btn btn-sensor" onclick="spawnDevice('sensor_pnp')">📡 센서(PNP)</button>
+  </div>
+
+  <div class="header-actions">
+    <button class="action-btn btn-cut-mode" id="btn-cut-mode" onclick="toggleCutMode()" title="가위 절단 모드 토글">
+      ✂️ <span class="pc-only-text">배선 절단</span><span class="mobile-only-text">절단</span>
+    </button>
+    <button class="action-btn btn-undo" id="btn-undo-action" onclick="undoLastAction()" title="Ctrl+Z">
+      ↩ <span class="pc-only-text">되돌리기</span><span class="mobile-only-text">취소</span>
+    </button>
+    <button class="action-btn btn-repair" id="btn-repair-top" onclick="repairAllBurned()">
+      🔧 <span class="pc-only-text">복구</span><span class="mobile-only-text">복구</span>
+    </button>
+    <button class="action-btn btn-clear-wire" onclick="clearAllWires()">
+      🗑️ <span class="pc-only-text">전체철거</span><span class="mobile-only-text">철거</span>
+    </button>
+    <button class="action-btn btn-reset" onclick="resetBoard()">
+      🔄 <span class="pc-only-text">리셋</span><span class="mobile-only-text">리셋</span>
+    </button>
+  </div>
+</header>
+
+<main id="board-container">
+  <div id="nuclear-flash-screen"></div>
+
+  <svg id="watermark-layer">
+    <defs>
+      <linearGradient id="coadGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#10b981" />
+        <stop offset="35%" stop-color="#059669" />
+        <stop offset="70%" stop-color="#0284c7" />
+        <stop offset="100%" stop-color="#1e3a8a" />
+      </linearGradient>
+      <pattern id="coadWatermarkPattern" width="360" height="200" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+        <text x="180" y="80" text-anchor="middle" font-family="'Montserrat', 'Outfit', sans-serif" font-weight="900" font-size="52" fill="url(#coadGrad)" letter-spacing="-1">COAD</text>
+        <text x="180" y="112" text-anchor="middle" font-family="'Montserrat', 'Outfit', sans-serif" font-weight="900" font-size="11" fill="#38bdf8" letter-spacing="4">SAFER, SMARTER, STRONGER</text>
+      </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#coadWatermarkPattern)" />
+  </svg>
+
+  <canvas id="fx-canvas"></canvas>
+
+  <svg id="wire-layer">
+    <g id="wires-group"></g>
+    <path id="rubber-band-path" stroke="#38bdf8" stroke-width="3" stroke-dasharray="6 4" fill="none" style="display:none;" />
+  </svg>
+
+  <div id="device-mount-point"></div>
+  <div id="toast-msg"></div>
+</main>
+
+<script>
+/* ==========================================================================
+   COAD 배선 시뮬레이터 Pro v4.4 - 지능형 부팅 & 완벽 반응형 엔진
+   ========================================================================== */
+
+const WIRE_10_COLORS = [
+  '#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4',
+  '#3b82f6', '#8b5cf6', '#ec4899', '#f8fafc', '#94a3b8'
+];
+
+let currentColorIdx = 0;
+let currentWireColor = WIRE_10_COLORS[0];
+
+let devices = {};
+let wires = [];
+let wireCounter = 0;
+let deviceCounter = 0;
+
+let selectedStartTerm = null;
+let audioCtx = null;
+
+let isCutMode = false;
+
+function toggleCutMode(forceState) {
+  isCutMode = (forceState !== undefined) ? forceState : !isCutMode;
+  const btn = document.getElementById('btn-cut-mode');
+  const board = document.getElementById('board-container');
+  
+  if (isCutMode) {
+    cancelPendingWire();
+    if (btn) {
+      btn.classList.add('active');
+      btn.innerHTML = `✂️ <span class="pc-only-text">절단 모드 ON</span><span class="mobile-only-text">절단 ON</span>`;
+    }
+    if (board) board.classList.add('cut-mode-active');
+    showToast('✂️ 배선 절단 모드 [ON]: 삭제할 전선을 터치/클릭하세요.');
+  } else {
+    if (btn) {
+      btn.classList.remove('active');
+      btn.innerHTML = `✂️ <span class="pc-only-text">배선 절단</span><span class="mobile-only-text">절단</span>`;
+    }
+    if (board) board.classList.remove('cut-mode-active');
+    showToast('⚡ 배선 모드로 전환되었습니다.');
+  }
+}
+
+let undoStack = [];
+
+function pushUndoState(actionType, data) {
+  undoStack.push({ type: actionType, data: JSON.parse(JSON.stringify(data)) });
+  if (undoStack.length > 30) undoStack.shift();
+  updateUndoButton();
+}
+
+function updateUndoButton() {
+  const btn = document.getElementById('btn-undo-action');
+  if (btn) btn.disabled = (undoStack.length === 0 && !selectedStartTerm);
+}
+
+function undoLastAction() {
+  // 만약 단자가 선택되어 결선 대기 중인 상태라면 먼저 배선 선택을 취소!
+  if (selectedStartTerm) {
+    cancelPendingWire();
+    return;
+  }
+  if (undoStack.length === 0) {
+    showToast("되돌릴 배선 작업이 없습니다.");
+    return;
+  }
+  const last = undoStack.pop();
+  if (last.type === 'ADD_WIRE') {
+    wires = wires.filter(w => w.id !== last.data.id);
+    playCutSound();
+    showToast("방금 결선한 배선이 취소되었습니다.");
+  } else if (last.type === 'REMOVE_WIRE') {
+    wires.push(last.data);
+    playClickSound();
+    showToast("삭제된 배선이 복원되었습니다.");
+  } else if (last.type === 'CLEAR_WIRES') {
+    wires = last.data;
+    showToast("철거되었던 모든 배선이 복원되었습니다.");
+  }
+  updateUndoButton();
+  renderWires();
+  evaluateCircuit();
+}
+
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (selectedStartTerm) {
+      cancelPendingWire();
+    } else if (isCutMode) {
+      toggleCutMode(false);
+    }
+  } else if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
+    e.preventDefault();
+    undoLastAction();
+  }
+});
+
+let toastTimer = null;
+function showToast(text) {
+  const el = document.getElementById('toast-msg');
+  if (!el) return;
+  el.textContent = text;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+function initColorPaletteBar() {
+  const container = document.getElementById('color-palette-bar');
+  if (!container) return;
+  container.innerHTML = '';
+  WIRE_10_COLORS.forEach((color, idx) => {
+    const dot = document.createElement('div');
+    dot.className = `color-dot ${idx === currentColorIdx ? 'active' : ''}`;
+    dot.style.background = color;
+    dot.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      selectWireColor(idx);
+    });
+    container.appendChild(dot);
+  });
+}
+
+function selectWireColor(idx) {
+  currentColorIdx = idx;
+  currentWireColor = WIRE_10_COLORS[idx];
+  document.querySelectorAll('.color-dot').forEach((d, i) => {
+    d.classList.toggle('active', i === idx);
+  });
+}
+
+function cycleNextWireColor() {
+  currentColorIdx = (currentColorIdx + 1) % WIRE_10_COLORS.length;
+  selectWireColor(currentColorIdx);
+}
+
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+window.addEventListener('pointerdown', initAudio, { once: true });
+
+function playClickSound() {
+  try {
+    initAudio();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine'; osc.frequency.setValueAtTime(850, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.04);
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.04);
+  } catch(e){}
+}
+
+function playMagneticClankSound() {
+  try {
+    initAudio();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle'; osc.frequency.setValueAtTime(140, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(35, audioCtx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.75, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.12);
+  } catch(e){}
+}
+
+function playCutSound() {
+  try {
+    initAudio();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle'; osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(180, audioCtx.currentTime + 0.07);
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.07);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.07);
+  } catch(e){}
+}
+
+function playMegaShortBlastSound() {
+  try {
+    initAudio();
+    const now = audioCtx.currentTime;
+    const bufSize = audioCtx.sampleRate * 0.4;
+    const buffer = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufSize * 0.15));
+    }
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+    const bpass = audioCtx.createBiquadFilter();
+    bpass.type = 'bandpass';
+    bpass.frequency.setValueAtTime(2800, now);
+    bpass.frequency.exponentialRampToValueAtTime(300, now + 0.35);
+    bpass.Q.value = 4.0;
+    const nGain = audioCtx.createGain();
+    nGain.gain.setValueAtTime(1.2, now);
+    nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+    noise.connect(bpass); bpass.connect(nGain); nGain.connect(audioCtx.destination);
+    noise.start(now);
+
+    const subOsc = audioCtx.createOscillator();
+    const subGain = audioCtx.createGain();
+    subOsc.type = 'sawtooth';
+    subOsc.frequency.setValueAtTime(140, now);
+    subOsc.frequency.exponentialRampToValueAtTime(22, now + 0.6);
+    subGain.gain.setValueAtTime(1.0, now);
+    subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+    subOsc.connect(subGain); subGain.connect(audioCtx.destination);
+    subOsc.start(now); subOsc.stop(now + 0.85);
+
+    const latchOsc = audioCtx.createOscillator();
+    const latchGain = audioCtx.createGain();
+    latchOsc.type = 'triangle';
+    latchOsc.frequency.setValueAtTime(450, now);
+    latchOsc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
+    latchGain.gain.setValueAtTime(0.9, now);
+    latchGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+    latchOsc.connect(latchGain); latchGain.connect(audioCtx.destination);
+    latchOsc.start(now); latchOsc.stop(now + 0.22);
+  } catch(e){}
+}
+
+function playCatastrophicExplosionSound() {
+  try {
+    initAudio();
+    const now = audioCtx.currentTime;
+    const bass = audioCtx.createOscillator();
+    const bassGain = audioCtx.createGain();
+    bass.type = 'sine';
+    bass.frequency.setValueAtTime(120, now);
+    bass.frequency.exponentialRampToValueAtTime(18, now + 1.8);
+    bassGain.gain.setValueAtTime(1.5, now);
+    bassGain.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
+    bass.connect(bassGain); bassGain.connect(audioCtx.destination);
+    bass.start(now); bass.stop(now + 2.0);
+
+    const bufSize = audioCtx.sampleRate * 2.2;
+    const buffer = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufSize, 1.4);
+    }
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+    const lpf = audioCtx.createBiquadFilter();
+    lpf.type = 'lowpass';
+    lpf.frequency.setValueAtTime(1800, now);
+    lpf.frequency.exponentialRampToValueAtTime(60, now + 2.1);
+    const nGain = audioCtx.createGain();
+    nGain.gain.setValueAtTime(1.3, now);
+    nGain.gain.exponentialRampToValueAtTime(0.001, now + 2.1);
+    noise.connect(lpf); lpf.connect(nGain); nGain.connect(audioCtx.destination);
+    noise.start(now);
+
+    const clank = audioCtx.createOscillator();
+    const clankGain = audioCtx.createGain();
+    clank.type = 'square';
+    clank.frequency.setValueAtTime(750, now);
+    clank.frequency.exponentialRampToValueAtTime(45, now + 0.35);
+    clankGain.gain.setValueAtTime(0.7, now);
+    clankGain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+    clank.connect(clankGain); clankGain.connect(audioCtx.destination);
+    clank.start(now); clank.stop(now + 0.38);
+  } catch(e){}
+}
+
+/* 기구 명세 (각 단자 라벨 고대비 컬러 코딩) */
+const DEVICE_SPECS = {
+  mc22b: {
+    name: 'LS MC-22b (1a1b 접촉기)', dotColor: '#ea580c', width: 265, height: 355,
+    render(dev) {
+      return `
+        <div class="term-row">
+          <div class="term-unit"><span class="term-label" style="color:#c084fc;">A1(코일)</span><div class="term" id="${dev.id}_A1"></div></div>
+          <div class="term-unit"><span class="term-label" style="color:#4ade80;">13(NO)</span><div class="term" id="${dev.id}_NO1"></div></div>
+          <div class="term-unit"><span class="term-label" style="color:#fb923c;">21(NC)</span><div class="term" id="${dev.id}_NC1"></div></div>
+        </div>
+        <div class="term-row" style="margin-top:2px;">
+          <div class="term-unit"><span class="term-label" style="color:#f59e0b;">R(1/L1)</span><div class="term" id="${dev.id}_R"></div></div>
+          <div class="term-unit"><span class="term-label" style="color:#38bdf8;">S(3/L2)</span><div class="term" id="${dev.id}_S"></div></div>
+          <div class="term-unit"><span class="term-label" style="color:#f8fafc;">T(5/L3)</span><div class="term" id="${dev.id}_T"></div></div>
+        </div>
+        <div class="ctrl-center-box" style="margin:4px 0; padding:6px 10px;">
+          <div style="font-size:9.5px;color:#94a3b8;font-weight:800;letter-spacing:0.5px;margin-bottom:2px;">LS Metasol MC-22b</div>
+          <div class="mc-crossbar" id="${dev.id}_bar">가동 접점 바 (OFF)</div>
+        </div>
+        <div class="term-row">
+          <div class="term-unit"><div class="term" id="${dev.id}_U"></div><span class="term-label" style="color:#f59e0b;">U(2/T1)</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_V"></div><span class="term-label" style="color:#38bdf8;">V(4/T2)</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_W"></div><span class="term-label" style="color:#f8fafc;">W(6/T3)</span></div>
+        </div>
+        <div class="term-row" style="margin-top:2px;">
+          <div class="term-unit"><div class="term" id="${dev.id}_A2"></div><span class="term-label" style="color:#c084fc;">A2(코일)</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_NO2"></div><span class="term-label" style="color:#4ade80;">14(NO)</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_NC2"></div><span class="term-label" style="color:#fb923c;">22(NC)</span></div>
+        </div>
+      `;
+    }
+  },
+  outlet: {
+    name: '상용 AC 220V 콘센트', dotColor: '#f59e0b', width: 220, height: 210,
+    render(dev) {
+      return `
+        <div class="ctrl-center-box" style="flex-direction:row; gap:16px;">
+          <div style="width:40px;height:40px;border-radius:50%;background:#1e293b;border:2px solid #475569;display:flex;align-items:center;justify-content:center;font-size:16px;">🔌</div>
+          <div style="font-size:11px;font-weight:800;color:#f59e0b;">AC 220V 60Hz<br><span style="color:#10b981;">상시 주전원</span></div>
+        </div>
+        <div class="term-row">
+          <div class="term-unit"><div class="term" id="${dev.id}_L"></div><span class="term-label" style="color:#f59e0b;">PWR_L(Hot)</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_N"></div><span class="term-label" style="color:#38bdf8;">PWR_N(Neut)</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_FG"></div><span class="term-label" style="color:#22c55e;">FG(접지)</span></div>
+        </div>
+      `;
+    }
+  },
+  mcb: {
+    name: 'AC 220V 차단기 (2P)', dotColor: '#38bdf8', width: 195, height: 235,
+    render(dev) {
+      return `
+        <div class="term-row">
+          <div class="term-unit"><span class="term-label" style="color:#f59e0b;">L_IN(1차)</span><div class="term" id="${dev.id}_IN_L"></div></div>
+          <div class="term-unit"><span class="term-label" style="color:#38bdf8;">N_IN(1차)</span><div class="term" id="${dev.id}_IN_N"></div></div>
+        </div>
+        <div class="ctrl-center-box">
+          <span class="ctrl-status-text" id="${dev.id}_txt">${dev.state.closed ? '투입 (ON)' : '차단 (OFF)'}</span>
+          <button class="ui-toggle-btn ${dev.state.closed ? 'active-on' : ''}" id="${dev.id}_btn" onclick="toggleBreaker('${dev.id}')">${dev.state.closed ? '레버 ON' : '레버 OFF'}</button>
+        </div>
+        <div class="term-row">
+          <div class="term-unit"><div class="term" id="${dev.id}_OUT_L"></div><span class="term-label" style="color:#f59e0b;">L_OUT(2차)</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_OUT_N"></div><span class="term-label" style="color:#38bdf8;">N_OUT(2차)</span></div>
+        </div>
+      `;
+    }
+  },
+  smps: {
+    name: 'SMPS (AC→DC24V)', dotColor: '#10b981', width: 200, height: 220,
+    render(dev) {
+      return `
+        <div class="term-row">
+          <div class="term-unit"><span class="term-label" style="color:#f59e0b;">AC_L</span><div class="term" id="${dev.id}_AC_L"></div></div>
+          <div class="term-unit"><span class="term-label" style="color:#38bdf8;">AC_N</span><div class="term" id="${dev.id}_AC_N"></div></div>
+        </div>
+        <div class="ctrl-center-box">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="dev-dot" id="${dev.id}_led" style="background:#475569;"></div>
+            <span style="font-size:11px;font-weight:800;color:#94a3b8;">정격 DC 24V 5A</span>
+          </div>
+        </div>
+        <div class="term-row">
+          <div class="term-unit"><div class="term" id="${dev.id}_DC_P"></div><span class="term-label" style="color:#ef4444;">+24V</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_DC_N"></div><span class="term-label" style="color:#60a5fa;">0V(GND)</span></div>
+        </div>
+      `;
+    }
+  },
+  pushbtn: {
+    name: '푸시버튼 (NO/NC)', dotColor: '#38bdf8', width: 190, height: 235,
+    render(dev) {
+      return `
+        <div class="term-row">
+          <div class="term-unit"><span class="term-label" style="color:#4ade80;">NO1</span><div class="term" id="${dev.id}_NO1"></div></div>
+          <div class="term-unit"><span class="term-label" style="color:#4ade80;">NO2</span><div class="term" id="${dev.id}_NO2"></div></div>
+        </div>
+        <div class="ctrl-center-box">
+          <button class="ui-toggle-btn" onpointerdown="pressPushBtn('${dev.id}', true)" onpointerup="pressPushBtn('${dev.id}', false)">누름 (HOLD)</button>
+        </div>
+        <div class="term-row">
+          <div class="term-unit"><div class="term" id="${dev.id}_NC1"></div><span class="term-label" style="color:#fb923c;">NC1</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_NC2"></div><span class="term-label" style="color:#fb923c;">NC2</span></div>
+        </div>
+      `;
+    }
+  },
+  selector: {
+    name: '3점 셀렉터 스위치', dotColor: '#38bdf8', width: 185, height: 215,
+    render(dev) {
+      return `
+        <div class="ctrl-center-box" style="margin-top:4px;">
+          <button class="ui-toggle-btn active-on" id="${dev.id}_btn" onclick="toggleSelector('${dev.id}')">선택: 1번 (L)</button>
+        </div>
+        <div class="term-row" style="margin-top:10px;">
+          <div class="term-unit"><div class="term" id="${dev.id}_COM"></div><span class="term-label" style="color:#facc15;">COM</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_SW1"></div><span class="term-label" style="color:#38bdf8;">NO1</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_SW2"></div><span class="term-label" style="color:#c084fc;">NO2</span></div>
+        </div>
+      `;
+    }
+  },
+  remote_ac: {
+    name: '📡 리모컨 (AC220V)', dotColor: '#38bdf8', width: 200, height: 230,
+    render(dev) {
+      return `
+        <div class="term-row">
+          <div class="term-unit"><span class="term-label" style="color:#f59e0b;">L_IN(220)</span><div class="term" id="${dev.id}_L"></div></div>
+          <div class="term-unit"><span class="term-label" style="color:#38bdf8;">N_IN(220)</span><div class="term" id="${dev.id}_N"></div></div>
+        </div>
+        <div class="ctrl-center-box">
+          <button class="ui-toggle-btn" onpointerdown="pressRemote('${dev.id}', true)" onpointerup="pressRemote('${dev.id}', false)">송신기 [A]버튼 송신</button>
+        </div>
+        <div class="term-row">
+          <div class="term-unit"><div class="term" id="${dev.id}_COM"></div><span class="term-label" style="color:#facc15;">COM</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_NO"></div><span class="term-label" style="color:#4ade80;">NO(A접)</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_NC"></div><span class="term-label" style="color:#fb923c;">NC(B접)</span></div>
+        </div>
+      `;
+    }
+  },
+  remote_dc: {
+    name: '📡 리모컨 (DC24V)', dotColor: '#10b981', width: 200, height: 230,
+    render(dev) {
+      return `
+        <div class="term-row">
+          <div class="term-unit"><span class="term-label" style="color:#ef4444;">+24V(DC)</span><div class="term" id="${dev.id}_P"></div></div>
+          <div class="term-unit"><span class="term-label" style="color:#60a5fa;">0V(GND)</span><div class="term" id="${dev.id}_N"></div></div>
+        </div>
+        <div class="ctrl-center-box">
+          <button class="ui-toggle-btn" onpointerdown="pressRemote('${dev.id}', true)" onpointerup="pressRemote('${dev.id}', false)">송신기 [A]버튼 송신</button>
+        </div>
+        <div class="term-row">
+          <div class="term-unit"><div class="term" id="${dev.id}_COM"></div><span class="term-label" style="color:#facc15;">COM</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_NO"></div><span class="term-label" style="color:#4ade80;">NO(A접)</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_NC"></div><span class="term-label" style="color:#fb923c;">NC(B접)</span></div>
+        </div>
+      `;
+    }
+  },
+  relay_ac: {
+    name: 'AC 릴레이 (2C / DPDT)', dotColor: '#a855f7', width: 215, height: 260,
+    render(dev) {
+      return `
+        <div class="term-row">
+          <div class="term-unit"><span class="term-label" style="color:#f59e0b;">A1(L)</span><div class="term" id="${dev.id}_A1"></div></div>
+          <div class="term-unit"><span class="term-label" style="color:#38bdf8;">A2(N)</span><div class="term" id="${dev.id}_A2"></div></div>
+        </div>
+        <div class="ctrl-center-box">
+          <div class="dev-dot" id="${dev.id}_led" style="background:#475569;"></div>
+          <span class="ctrl-status-text" id="${dev.id}_txt">소자 (OFF)</span>
+        </div>
+        <div class="term-row">
+          <div class="term-unit"><div class="term" id="${dev.id}_COM1"></div><span class="term-label" style="color:#facc15;">COM1</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_NO1"></div><span class="term-label" style="color:#4ade80;">NO1</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_NC1"></div><span class="term-label" style="color:#fb923c;">NC1</span></div>
+        </div>
+        <div class="term-row" style="margin-top:2px;">
+          <div class="term-unit"><div class="term" id="${dev.id}_COM2"></div><span class="term-label" style="color:#facc15;">COM2</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_NO2"></div><span class="term-label" style="color:#4ade80;">NO2</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_NC2"></div><span class="term-label" style="color:#fb923c;">NC2</span></div>
+        </div>
+      `;
+    }
+  },
+  relay_dc: {
+    name: 'DC 릴레이 (2C / DPDT)', dotColor: '#10b981', width: 215, height: 260,
+    render(dev) {
+      return `
+        <div class="term-row">
+          <div class="term-unit"><span class="term-label" style="color:#ef4444;">+코일(24V)</span><div class="term" id="${dev.id}_COIL_P"></div></div>
+          <div class="term-unit"><span class="term-label" style="color:#60a5fa;">-코일(0V)</span><div class="term" id="${dev.id}_COIL_N"></div></div>
+        </div>
+        <div class="ctrl-center-box">
+          <div class="dev-dot" id="${dev.id}_led" style="background:#475569;"></div>
+          <span class="ctrl-status-text" id="${dev.id}_txt">소자 (OFF)</span>
+        </div>
+        <div class="term-row">
+          <div class="term-unit"><div class="term" id="${dev.id}_COM1"></div><span class="term-label" style="color:#facc15;">COM1</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_NO1"></div><span class="term-label" style="color:#4ade80;">NO1</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_NC1"></div><span class="term-label" style="color:#fb923c;">NC1</span></div>
+        </div>
+        <div class="term-row" style="margin-top:2px;">
+          <div class="term-unit"><div class="term" id="${dev.id}_COM2"></div><span class="term-label" style="color:#facc15;">COM2</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_NO2"></div><span class="term-label" style="color:#4ade80;">NO2</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_NC2"></div><span class="term-label" style="color:#fb923c;">NC2</span></div>
+        </div>
+      `;
+    }
+  },
+  alarm_ac: {
+    name: '경광등 (AC 220V)', dotColor: '#ef4444', width: 175, height: 200,
+    render(dev) {
+      return `
+        <div class="ctrl-center-box">
+          <div class="lamp-dome" id="${dev.id}_dome"></div>
+        </div>
+        <div class="term-row">
+          <div class="term-unit"><div class="term" id="${dev.id}_L"></div><span class="term-label" style="color:#f59e0b;">L상</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_N"></div><span class="term-label" style="color:#38bdf8;">N상</span></div>
+        </div>
+      `;
+    }
+  },
+  alarm_dc: {
+    name: '경광등 (DC 24V)', dotColor: '#ef4444', width: 175, height: 200,
+    render(dev) {
+      return `
+        <div class="ctrl-center-box">
+          <div class="lamp-dome" id="${dev.id}_dome"></div>
+        </div>
+        <div class="term-row">
+          <div class="term-unit"><div class="term" id="${dev.id}_P"></div><span class="term-label" style="color:#ef4444;">+24V</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_N"></div><span class="term-label" style="color:#60a5fa;">0V</span></div>
+        </div>
+      `;
+    }
+  },
+  tower_2c_ac: {
+    name: '2색 타워 (AC 220V)', dotColor: '#f59e0b', width: 190, height: 230,
+    render(dev) {
+      return `
+        <div class="ctrl-center-box">
+          <div class="tower-stack">
+            <div class="tower-tier tier-red" id="${dev.id}_tier_r"></div>
+            <div class="tower-tier tier-green" id="${dev.id}_tier_g"></div>
+          </div>
+        </div>
+        <div class="term-row">
+          <div class="term-unit"><div class="term" id="${dev.id}_COM"></div><span class="term-label" style="color:#38bdf8;">COM(N)</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_R"></div><span class="term-label" style="color:#ef4444;">R(적)</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_G"></div><span class="term-label" style="color:#22c55e;">G(녹)</span></div>
+        </div>
+      `;
+    }
+  },
+  tower_2c_dc: {
+    name: '2색 타워 (DC 24V)', dotColor: '#f59e0b', width: 190, height: 230,
+    render(dev) {
+      return `
+        <div class="ctrl-center-box">
+          <div class="tower-stack">
+            <div class="tower-tier tier-red" id="${dev.id}_tier_r"></div>
+            <div class="tower-tier tier-green" id="${dev.id}_tier_g"></div>
+          </div>
+        </div>
+        <div class="term-row">
+          <div class="term-unit"><div class="term" id="${dev.id}_COM"></div><span class="term-label" style="color:#60a5fa;">COM(0V)</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_R"></div><span class="term-label" style="color:#ef4444;">+R(적)</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_G"></div><span class="term-label" style="color:#22c55e;">+G(녹)</span></div>
+        </div>
+      `;
+    }
+  },
+  tower_3c_ac: {
+    name: '3색 타워 (AC 220V)', dotColor: '#f59e0b', width: 200, height: 245,
+    render(dev) {
+      return `
+        <div class="ctrl-center-box">
+          <div class="tower-stack">
+            <div class="tower-tier tier-red" id="${dev.id}_tier_r"></div>
+            <div class="tower-tier tier-yellow" id="${dev.id}_tier_y"></div>
+            <div class="tower-tier tier-green" id="${dev.id}_tier_g"></div>
+          </div>
+        </div>
+        <div class="term-row">
+          <div class="term-unit"><div class="term" id="${dev.id}_COM"></div><span class="term-label" style="color:#38bdf8;">COM(N)</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_R"></div><span class="term-label" style="color:#ef4444;">R(적)</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_Y"></div><span class="term-label" style="color:#eab308;">Y(황)</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_G"></div><span class="term-label" style="color:#22c55e;">G(녹)</span></div>
+        </div>
+      `;
+    }
+  },
+  tower_3c_dc: {
+    name: '3색 타워 (DC 24V)', dotColor: '#f59e0b', width: 200, height: 245,
+    render(dev) {
+      return `
+        <div class="ctrl-center-box">
+          <div class="tower-stack">
+            <div class="tower-tier tier-red" id="${dev.id}_tier_r"></div>
+            <div class="tower-tier tier-yellow" id="${dev.id}_tier_y"></div>
+            <div class="tower-tier tier-green" id="${dev.id}_tier_g"></div>
+          </div>
+        </div>
+        <div class="term-row">
+          <div class="term-unit"><div class="term" id="${dev.id}_COM"></div><span class="term-label" style="color:#60a5fa;">COM(0V)</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_R"></div><span class="term-label" style="color:#ef4444;">+R</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_Y"></div><span class="term-label" style="color:#eab308;">+Y</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_G"></div><span class="term-label" style="color:#22c55e;">+G</span></div>
+        </div>
+      `;
+    }
+  },
+  sensor_npn: {
+    name: '광전 센서 (NPN)', dotColor: '#10b981', width: 200, height: 220,
+    render(dev) {
+      return `
+        <div class="ctrl-center-box">
+          <button class="ui-toggle-btn" id="${dev.id}_btn" onclick="toggleSensorTarget('${dev.id}')">물체: 없음</button>
+        </div>
+        <div class="term-row">
+          <div class="term-unit"><div class="term" id="${dev.id}_BRN"></div><span class="term-label" style="color:#f59e0b;">갈(+24V)</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_BLU"></div><span class="term-label" style="color:#38bdf8;">청(0V)</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_BLK"></div><span class="term-label" style="color:#c084fc;">흑(OUT)</span></div>
+        </div>
+      `;
+    }
+  },
+  sensor_pnp: {
+    name: '적외선 센서 (PNP)', dotColor: '#10b981', width: 200, height: 220,
+    render(dev) {
+      return `
+        <div class="ctrl-center-box">
+          <button class="ui-toggle-btn" id="${dev.id}_btn" onclick="toggleSensorTarget('${dev.id}')">물체: 없음</button>
+        </div>
+        <div class="term-row">
+          <div class="term-unit"><div class="term" id="${dev.id}_BRN"></div><span class="term-label" style="color:#f59e0b;">갈(+24V)</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_BLU"></div><span class="term-label" style="color:#38bdf8;">청(0V)</span></div>
+          <div class="term-unit"><div class="term" id="${dev.id}_BLK"></div><span class="term-label" style="color:#c084fc;">흑(OUT)</span></div>
+        </div>
+      `;
+    }
+  }
+};
+
+function spawnDevice(type, posX = null, posY = null) {
+  const spec = DEVICE_SPECS[type];
+  if (!spec) return;
+
+  deviceCounter++;
+  const id = `dev_${type}_${deviceCounter}`;
+
+  if (posX === null || posY === null) {
+    const isMobile = window.innerWidth <= 768;
+    const offset = (deviceCounter % 4) * 20;
+    posX = Math.round((isMobile ? 20 : 60 + offset) / 20) * 20;
+    posY = Math.round((isMobile ? 20 + offset : 50 + offset) / 20) * 20;
+  }
+
+  const devObj = {
+    id, type, x: posX, y: posY, width: spec.width, height: spec.height,
+    burned: false,
+    state: { closed: (type === 'mcb'), active: false, target: false, pos: 1 }
+  };
+  devices[id] = devObj;
+
+  const card = document.createElement('div');
+  card.id = id;
+  card.className = 'device-module';
+  card.style.left = `${posX}px`;
+  card.style.top = `${posY}px`;
+  card.style.width = `${spec.width}px`;
+  card.style.height = `${spec.height}px`;
+
+  card.innerHTML = `
+    <div class="device-header" id="${id}_header">
+      <div class="device-header-left">
+        <div class="dev-dot" style="background:${spec.dotColor};"></div>
+        <span>${spec.name}</span>
+      </div>
+      <button class="dev-btn-close" onclick="removeDevice('${id}')">✕</button>
+    </div>
+    <div class="device-body">
+      ${spec.render(devObj)}
+    </div>
+  `;
+
+  const mountPoint = document.getElementById('device-mount-point');
+  if (mountPoint) mountPoint.appendChild(card);
+  setupDevicePointerDrag(id);
+  bindTerminals(id);
+
+  showToast(`${spec.name} 배치 완료`);
+  evaluateCircuit();
+  return id;
+}
+
+function removeDevice(devId) {
+  wires = wires.filter(w => !w.from.startsWith(devId + '_') && !w.to.startsWith(devId + '_'));
+  delete devices[devId];
+  const el = document.getElementById(devId);
+  if (el) el.remove();
+  renderWires();
+  evaluateCircuit();
+  showToast(`기구 제거 완료`);
+}
+
+function setupDevicePointerDrag(devId) {
+  const header = document.getElementById(`${devId}_header`);
+  const card = document.getElementById(devId);
+  if (!header || !card) return;
+
+  header.addEventListener('pointerdown', (e) => {
+    if (e.target.classList.contains('dev-btn-close')) return;
+    initAudio();
+    header.setPointerCapture(e.pointerId);
+
+    let startX = e.clientX, startY = e.clientY;
+    let origX = devices[devId].x, origY = devices[devId].y;
+
+    function onPointerMove(ev) {
+      let dx = ev.clientX - startX;
+      let dy = ev.clientY - startY;
+      let newX = Math.max(0, Math.round((origX + dx) / 20) * 20);
+      let newY = Math.max(0, Math.round((origY + dy) / 20) * 20);
+
+      devices[devId].x = newX;
+      devices[devId].y = newY;
+      card.style.left = `${newX}px`;
+      card.style.top = `${newY}px`;
+
+      updateConnectedWires(devId);
+    }
+
+    function onPointerUp(ev) {
+      header.releasePointerCapture(ev.pointerId);
+      header.removeEventListener('pointermove', onPointerMove);
+      header.removeEventListener('pointerup', onPointerUp);
+      header.removeEventListener('pointercancel', onPointerUp);
+    }
+
+    header.addEventListener('pointermove', onPointerMove);
+    header.addEventListener('pointerup', onPointerUp);
+    header.addEventListener('pointercancel', onPointerUp);
+  });
+}
+
+function bindTerminals(devId) {
+  const devEl = document.getElementById(devId);
+  if (!devEl) return;
+  const terms = devEl.querySelectorAll('.term');
+  terms.forEach(t => {
+    t.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      initAudio();
+      handleTerminalClick(t.id);
+    });
+  });
+}
+
+function cancelPendingWire() {
+  if (selectedStartTerm) {
+    document.getElementById(selectedStartTerm)?.classList.remove('selected-anchor');
+    selectedStartTerm = null;
+    stopRubberBand();
+    showToast("배선 선택이 취소되었습니다.");
+    updateUndoButton();
+  }
+}
+
+document.getElementById('board-container').addEventListener('pointerdown', (e) => {
+  if (e.target.id === 'board-container' || e.target.id === 'watermark-layer' || e.target.tagName === 'svg' || e.target.id === 'device-mount-point') {
+    if (selectedStartTerm) {
+      cancelPendingWire();
+    }
+  }
+});
+
+window.addEventListener('contextmenu', (e) => {
+  if (selectedStartTerm) {
+    e.preventDefault();
+    cancelPendingWire();
+  }
+});
+
+function handleTerminalClick(termId) {
+  const termEl = document.getElementById(termId);
+  if (!termEl) return;
+
+  if (isCutMode) {
+    toggleCutMode(false);
+  }
+
+  if (!selectedStartTerm) {
+    selectedStartTerm = termId;
+    termEl.classList.add('selected-anchor');
+    showToast(`단자 선택됨 (취소: 빈 화면 탭 또는 ↩취소)`);
+    updateUndoButton();
+    startRubberBand(termId);
+  } else {
+    if (selectedStartTerm === termId) {
+      cancelPendingWire();
+      return;
+    }
+
+    const exists = wires.some(w => (w.from === selectedStartTerm && w.to === termId) || (w.from === termId && w.to === selectedStartTerm));
+    if (!exists) {
+      wireCounter++;
+      const newWire = {
+        id: `wire_${wireCounter}`,
+        from: selectedStartTerm,
+        to: termId,
+        color: currentWireColor,
+        anchor: null,
+        userAdjusted: false
+      };
+      wires.push(newWire);
+      pushUndoState('ADD_WIRE', newWire);
+      playClickSound();
+      showToast(`배선 결선 완료 (잘못 연결 시 ↩취소)`);
+      cycleNextWireColor();
+    } else {
+      showToast(`이미 연결된 배선입니다.`);
+    }
+
+    document.getElementById(selectedStartTerm)?.classList.remove('selected-anchor');
+    selectedStartTerm = null;
+    stopRubberBand();
+    renderWires();
+    evaluateCircuit();
+    updateUndoButton();
+  }
+}
+
+const rubberBand = document.getElementById('rubber-band-path');
+function startRubberBand(startTermId) {
+  rubberBand.style.display = 'block';
+  const board = document.getElementById('board-container').getBoundingClientRect();
+
+  function onPointerMove(e) {
+    const p1 = getTermCenter(startTermId);
+    const p2 = { x: e.clientX - board.left, y: e.clientY - board.top };
+    const d = `M ${p1.x} ${p1.y} Q ${(p1.x + p2.x)/2} ${(p1.y + p2.y)/2 + 25} ${p2.x} ${p2.y}`;
+    rubberBand.setAttribute('d', d);
+  }
+
+  window.rubberBandHandler = onPointerMove;
+  window.addEventListener('pointermove', onPointerMove);
+}
+
+function stopRubberBand() {
+  rubberBand.style.display = 'none';
+  if (window.rubberBandHandler) {
+    window.removeEventListener('pointermove', window.rubberBandHandler);
+    window.rubberBandHandler = null;
+  }
+}
+
+function getTermCenter(termId) {
+  const el = document.getElementById(termId);
+  if (!el) return { x: 0, y: 0 };
+  const rect = el.getBoundingClientRect();
+  const board = document.getElementById('board-container').getBoundingClientRect();
+  return {
+    x: rect.left - board.left + rect.width / 2,
+    y: rect.top - board.top + rect.height / 2
+  };
+}
+
+/* 6. 지능형 앵커 & 정밀 형상 계산기 */
+function calculateWireGeometry(w) {
+  const p0 = getTermCenter(w.from);
+  const p2 = getTermCenter(w.to);
+  const mid = { x: (p0.x + p2.x) / 2, y: (p0.y + p2.y) / 2 };
+  const dx = p2.x - p0.x;
+  const dy = p2.y - p0.y;
+  const dist = Math.hypot(dx, dy);
+
+  if (!w.anchor) {
+    const sag = Math.min(72, Math.max(6, dist * 0.18));
+    if (Math.abs(dx) < 25 && Math.abs(dy) > 30) {
+      w.anchor = { x: mid.x + sag, y: mid.y };
+    } else {
+      w.anchor = { x: mid.x, y: mid.y + sag };
+    }
+  }
+
+  const pc = {
+    x: 2 * w.anchor.x - mid.x,
+    y: 2 * w.anchor.y - mid.y
+  };
+
+  const fullPathD = `M ${p0.x} ${p0.y} Q ${pc.x} ${pc.y} ${p2.x} ${p2.y}`;
+
+  return { fullPathD, anchor: w.anchor, dist };
+}
+
+function updateWireGeometryDOM(w) {
+  const grp = document.getElementById(`wire_grp_${w.id}`);
+  if (!grp) return;
+  const geom = calculateWireGeometry(w);
+
+  const outline = grp.querySelector('.wire-outline-line');
+  const core = grp.querySelector('.wire-core-line');
+  const hit = grp.querySelector('.wire-hit-zone');
+  const hitCircle = grp.querySelector('.wire-anchor-hit');
+  const dotCircle = grp.querySelector('.wire-anchor-dot');
+
+  if (outline) outline.setAttribute('d', geom.fullPathD);
+  if (core) core.setAttribute('d', geom.fullPathD);
+  if (hit) hit.setAttribute('d', geom.fullPathD);
+  if (hitCircle) {
+    hitCircle.setAttribute('cx', geom.anchor.x);
+    hitCircle.setAttribute('cy', geom.anchor.y);
+  }
+  if (dotCircle) {
+    dotCircle.setAttribute('cx', geom.anchor.x);
+    dotCircle.setAttribute('cy', geom.anchor.y);
+  }
+}
+
+function updateConnectedWires(devId) {
+  wires.forEach(w => {
+    if (w.from.startsWith(devId + '_') || w.to.startsWith(devId + '_')) {
+      if (!w.userAdjusted) {
+        w.anchor = null;
+      }
+      updateWireGeometryDOM(w);
+    }
+  });
+}
+
+function renderWires() {
+  const wiresGroup = document.getElementById('wires-group');
+  if (!wiresGroup) return;
+  wiresGroup.innerHTML = '';
+
+  wires.forEach(w => {
+    const geom = calculateWireGeometry(w);
+
+    const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    group.id = `wire_grp_${w.id}`;
+
+    const outline = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    outline.setAttribute('d', geom.fullPathD);
+    outline.setAttribute('class', 'wire-outline-line');
+
+    const core = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    core.setAttribute('d', geom.fullPathD);
+    core.setAttribute('class', 'wire-core-line');
+    core.setAttribute('stroke', w.color);
+    core.setAttribute('id', `core_${w.id}`);
+
+    const hitZone = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    hitZone.setAttribute('d', geom.fullPathD);
+    hitZone.setAttribute('class', 'wire-hit-zone');
+    hitZone.addEventListener('pointerdown', (e) => {
+      if (!isCutMode) return;
+      e.stopPropagation();
+      removeWire(w.id);
+    });
+
+    const anchorGrp = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    anchorGrp.setAttribute('class', 'wire-anchor-group');
+    anchorGrp.innerHTML = `
+      <circle cx="${geom.anchor.x}" cy="${geom.anchor.y}" r="22" class="wire-anchor-hit" />
+      <circle cx="${geom.anchor.x}" cy="${geom.anchor.y}" r="6.5" class="wire-anchor-dot" />
+    `;
+    setupAnchorPointerDrag(anchorGrp, w);
+
+    group.appendChild(outline);
+    group.appendChild(core);
+    group.appendChild(hitZone);
+    group.appendChild(anchorGrp);
+    wiresGroup.appendChild(group);
+  });
+}
+
+function removeWire(wireId) {
+  const targetWire = wires.find(w => w.id === wireId);
+  if (targetWire) pushUndoState('REMOVE_WIRE', targetWire);
+
+  playCutSound();
+  wires = wires.filter(w => w.id !== wireId);
+  renderWires();
+  evaluateCircuit();
+  showToast(`✂️ 배선이 절단(삭제)되었습니다. (실행 취소: ↩취소)`);
+}
+
+function clearAllWires() {
+  if (wires.length > 0) pushUndoState('CLEAR_WIRES', wires);
+  wires = [];
+  renderWires();
+  evaluateCircuit();
+  showToast(`모든 배선이 철거되었습니다.`);
+}
+
+function setupAnchorPointerDrag(anchorGrp, wireObj) {
+  anchorGrp.addEventListener('pointerdown', (e) => {
+    if (isCutMode) {
+      e.stopPropagation();
+      removeWire(wireObj.id);
+      return;
+    }
+
+    e.stopPropagation();
+    initAudio();
+    anchorGrp.setPointerCapture(e.pointerId);
+    wireObj.userAdjusted = true;
+    const board = document.getElementById('board-container').getBoundingClientRect();
+
+    function onPointerMove(ev) {
+      wireObj.anchor = {
+        x: ev.clientX - board.left,
+        y: ev.clientY - board.top
+      };
+      updateWireGeometryDOM(wireObj);
+    }
+
+    function onPointerUp(ev) {
+      anchorGrp.releasePointerCapture(ev.pointerId);
+      anchorGrp.removeEventListener('pointermove', onPointerMove);
+      anchorGrp.removeEventListener('pointerup', onPointerUp);
+      anchorGrp.removeEventListener('pointercancel', onPointerUp);
+    }
+
+    anchorGrp.addEventListener('pointermove', onPointerMove);
+    anchorGrp.addEventListener('pointerup', onPointerUp);
+    anchorGrp.addEventListener('pointercancel', onPointerUp);
+  });
+}
+
+function toggleBreaker(devId) {
+  const dev = devices[devId];
+  if (!dev) return;
+  initAudio();
+  dev.state.closed = !dev.state.closed;
+  const btn = document.getElementById(`${devId}_btn`);
+  const txt = document.getElementById(`${devId}_txt`);
+  if (dev.state.closed) {
+    btn.textContent = "레버 ON";
+    btn.className = "ui-toggle-btn active-on";
+    txt.textContent = "투입 (ON)";
+    showToast(`차단기 수동 투입 (ON)`);
+  } else {
+    btn.textContent = "레버 OFF";
+    btn.className = "ui-toggle-btn";
+    txt.textContent = "차단 (OFF)";
+    showToast(`차단기 수동 차단 (OFF)`);
+  }
+  evaluateCircuit();
+}
+
+function pressPushBtn(devId, pressed) {
+  const dev = devices[devId];
+  if (!dev) return;
+  initAudio();
+  dev.state.active = pressed;
+  evaluateCircuit();
+}
+
+function toggleSelector(devId) {
+  const dev = devices[devId];
+  if (!dev) return;
+  initAudio();
+  dev.state.pos = (dev.state.pos === 1) ? 2 : 1;
+  const btn = document.getElementById(`${devId}_btn`);
+  btn.textContent = `선택: ${dev.state.pos}번 (${dev.state.pos === 1 ? 'L' : 'R'})`;
+  evaluateCircuit();
+}
+
+function pressRemote(devId, pressed) {
+  const dev = devices[devId];
+  if (!dev) return;
+  initAudio();
+  if (!dev.state.powered) {
+    showToast(`수신기에 전원이 인가되지 않았습니다.`);
+    return;
+  }
+  dev.state.active = pressed;
+  if (pressed) playClickSound();
+  evaluateCircuit();
+}
+
+function toggleSensorTarget(devId) {
+  const dev = devices[devId];
+  if (!dev) return;
+  initAudio();
+  if (!dev.state.powered) {
+    showToast(`센서 전원이 결선되지 않았습니다.`);
+    return;
+  }
+  dev.state.target = !dev.state.target;
+  const btn = document.getElementById(`${devId}_btn`);
+  btn.textContent = dev.state.target ? "물체: 감지됨" : "물체: 없음";
+  btn.classList.toggle('active-on', dev.state.target);
+  evaluateCircuit();
+}
+
+/* ==========================================================================
+   ⚡ 핵심 회로 다중 수렴 해석기
+   ========================================================================== */
+function evaluateCircuit() {
+  for (let pass = 0; pass < 6; pass++) {
+    let activeEdges = [...wires];
+
+    Object.values(devices).forEach(dev => {
+      if (dev.burned) return;
+
+      if (dev.type === 'mcb' && dev.state.closed) {
+        activeEdges.push({ from: `${dev.id}_IN_L`, to: `${dev.id}_OUT_L` });
+        activeEdges.push({ from: `${dev.id}_IN_N`, to: `${dev.id}_OUT_N` });
+      }
+      if (dev.type === 'pushbtn') {
+        if (dev.state.active) {
+          activeEdges.push({ from: `${dev.id}_NO1`, to: `${dev.id}_NO2` });
+        } else {
+          activeEdges.push({ from: `${dev.id}_NC1`, to: `${dev.id}_NC2` });
+        }
+      }
+      if (dev.type === 'selector') {
+        if (dev.state.pos === 1) activeEdges.push({ from: `${dev.id}_COM`, to: `${dev.id}_SW1` });
+        else activeEdges.push({ from: `${dev.id}_COM`, to: `${dev.id}_SW2` });
+      }
+      if (dev.type === 'remote_ac' || dev.type === 'remote_dc') {
+        if (dev.state.powered && dev.state.active) {
+          activeEdges.push({ from: `${dev.id}_COM`, to: `${dev.id}_NO` });
+        } else {
+          activeEdges.push({ from: `${dev.id}_COM`, to: `${dev.id}_NC` });
+        }
+      }
+      if (dev.type === 'relay_ac' || dev.type === 'relay_dc') {
+        if (dev.state.active) {
+          activeEdges.push({ from: `${dev.id}_COM1`, to: `${dev.id}_NO1` });
+          activeEdges.push({ from: `${dev.id}_COM2`, to: `${dev.id}_NO2` });
+        } else {
+          activeEdges.push({ from: `${dev.id}_COM1`, to: `${dev.id}_NC1` });
+          activeEdges.push({ from: `${dev.id}_COM2`, to: `${dev.id}_NC2` });
+        }
+      }
+      if (dev.type === 'mc22b') {
+        if (dev.state.active) {
+          activeEdges.push({ from: `${dev.id}_R`, to: `${dev.id}_U` });
+          activeEdges.push({ from: `${dev.id}_S`, to: `${dev.id}_V` });
+          activeEdges.push({ from: `${dev.id}_T`, to: `${dev.id}_W` });
+          activeEdges.push({ from: `${dev.id}_NO1`, to: `${dev.id}_NO2` });
+        } else {
+          activeEdges.push({ from: `${dev.id}_NC1`, to: `${dev.id}_NC2` });
+        }
+      }
+      if (dev.type === 'sensor_npn' && dev.state.powered && dev.state.target) {
+        activeEdges.push({ from: `${dev.id}_BLK`, to: `${dev.id}_BLU` });
+      }
+      if (dev.type === 'sensor_pnp' && dev.state.powered && dev.state.target) {
+        activeEdges.push({ from: `${dev.id}_BLK`, to: `${dev.id}_BRN` });
+      }
+    });
+
+    const parent = {};
+    function find(i) {
+      if (!parent[i]) parent[i] = i;
+      if (parent[i] === i) return i;
+      return parent[i] = find(parent[i]);
+    }
+    function union(i, j) {
+      const rootI = find(i);
+      const rootJ = find(j);
+      if (rootI !== rootJ) parent[rootI] = rootJ;
+    }
+    activeEdges.forEach(e => union(e.from, e.to));
+
+    let acL_roots = new Set();
+    let acN_roots = new Set();
+    Object.values(devices).filter(d => d.type === 'outlet').forEach(out => {
+      acL_roots.add(find(`${out.id}_L`));
+      acN_roots.add(find(`${out.id}_N`));
+    });
+
+    // 1. AC 220V 대단락 (Dead Short) 검증
+    for (let rL of acL_roots) {
+      if (acN_roots.has(rL)) {
+        triggerMassiveAcShortCircuit();
+        return;
+      }
+    }
+
+    // 2. DC 24V 기구에 AC 220V 고전압 인가 검증
+    let burnedCount = 0;
+    Object.values(devices).forEach(dev => {
+      if (dev.burned) return;
+
+      let termPairs = [];
+      if (dev.type === 'relay_dc') termPairs.push([`${dev.id}_COIL_P`, `${dev.id}_COIL_N`]);
+      else if (dev.type === 'alarm_dc') termPairs.push([`${dev.id}_P`, `${dev.id}_N`]);
+      else if (dev.type === 'remote_dc') termPairs.push([`${dev.id}_P`, `${dev.id}_N`]);
+      else if (dev.type === 'tower_2c_dc') termPairs.push([`${dev.id}_COM`, `${dev.id}_R`], [`${dev.id}_COM`, `${dev.id}_G`]);
+      else if (dev.type === 'tower_3c_dc') termPairs.push([`${dev.id}_COM`, `${dev.id}_R`], [`${dev.id}_COM`, `${dev.id}_Y`], [`${dev.id}_COM`, `${dev.id}_G`]);
+      else if (dev.type === 'sensor_npn' || dev.type === 'sensor_pnp') termPairs.push([`${dev.id}_BRN`, `${dev.id}_BLU`]);
+
+      for (let pair of termPairs) {
+        const root1 = find(pair[0]);
+        const root2 = find(pair[1]);
+        const isL1 = [...acL_roots].includes(root1), isN1 = [...acN_roots].includes(root1);
+        const isL2 = [...acL_roots].includes(root2), isN2 = [...acN_roots].includes(root2);
+
+        if ((isL1 && isN2) || (isN1 && isL2)) {
+          triggerCatastrophicBurnout(dev.id);
+          burnedCount++;
+          break;
+        }
+      }
+    });
+
+    if (burnedCount > 0) {
+      updateTopRepairButton();
+      return;
+    }
+
+    // 3. SMPS 활성화 및 DC 24V 단락 검증
+    let activeSmps = [];
+    Object.values(devices).filter(d => d.type === 'smps' && !d.burned).forEach(smps => {
+      const rootL = find(`${smps.id}_AC_L`);
+      const rootN = find(`${smps.id}_AC_N`);
+      const hasPower = [...acL_roots].includes(rootL) && [...acN_roots].includes(rootN);
+      smps.state.active = hasPower;
+      document.getElementById(`${smps.id}_led`).style.background = hasPower ? '#10b981' : '#475569';
+      document.getElementById(smps.id).classList.toggle('module-active-dc', hasPower);
+      if (hasPower) activeSmps.push(smps);
+    });
+
+    let dcP_roots = new Set();
+    let dcN_roots = new Set();
+    activeSmps.forEach(smps => {
+      dcP_roots.add(find(`${smps.id}_DC_P`));
+      dcN_roots.add(find(`${smps.id}_DC_N`));
+    });
+
+    for (let rP of dcP_roots) {
+      if (dcN_roots.has(rP)) {
+        activeSmps.forEach(smps => triggerCatastrophicBurnout(smps.id, "DC 24V 출력 대단락 폭발!"));
+        updateTopRepairButton();
+        return;
+      }
+    }
+
+    let stateChanged = false;
+
+    Object.values(devices).forEach(dev => {
+      if (dev.burned) return;
+
+      if (dev.type === 'relay_ac') {
+        const r1 = find(`${dev.id}_A1`), r2 = find(`${dev.id}_A2`);
+        const on = ([...acL_roots].includes(r1) && [...acN_roots].includes(r2)) || ([...acL_roots].includes(r2) && [...acN_roots].includes(r1));
+        if (dev.state.active !== on) stateChanged = true;
+        dev.state.active = on;
+        document.getElementById(`${dev.id}_led`).style.background = on ? '#10b981' : '#475569';
+        document.getElementById(`${dev.id}_txt`).textContent = on ? '여자 (ON)' : '소자 (OFF)';
+        document.getElementById(dev.id).classList.toggle('module-active-ac', on);
+      }
+
+      if (dev.type === 'relay_dc') {
+        const rP = find(`${dev.id}_COIL_P`), rN = find(`${dev.id}_COIL_N`);
+        const on = [...dcP_roots].includes(rP) && [...dcN_roots].includes(rN);
+        if (dev.state.active !== on) stateChanged = true;
+        dev.state.active = on;
+        document.getElementById(`${dev.id}_led`).style.background = on ? '#10b981' : '#475569';
+        document.getElementById(`${dev.id}_txt`).textContent = on ? '여자 (ON)' : '소자 (OFF)';
+        document.getElementById(dev.id).classList.toggle('module-active-dc', on);
+      }
+
+      if (dev.type === 'mc22b') {
+        const r1 = find(`${dev.id}_A1`), r2 = find(`${dev.id}_A2`);
+        const on = ([...acL_roots].includes(r1) && [...acN_roots].includes(r2)) || ([...acL_roots].includes(r2) && [...acN_roots].includes(r1));
+        if (dev.state.active !== on) {
+          stateChanged = true;
+          if (on) playMagneticClankSound();
+        }
+        dev.state.active = on;
+        const bar = document.getElementById(`${dev.id}_bar`);
+        if (bar) {
+          bar.classList.toggle('closed', on);
+          bar.textContent = on ? '접촉 투입 (ON ⚡)' : '가동 접점 바 (OFF)';
+        }
+        document.getElementById(dev.id).classList.toggle('module-active-mc', on);
+      }
+
+      if (dev.type === 'remote_ac') {
+        const r1 = find(`${dev.id}_L`), r2 = find(`${dev.id}_N`);
+        dev.state.powered = ([...acL_roots].includes(r1) && [...acN_roots].includes(r2)) || ([...acL_roots].includes(r2) && [...acN_roots].includes(r1));
+        document.getElementById(dev.id).classList.toggle('module-active-ac', dev.state.powered);
+      }
+      if (dev.type === 'remote_dc') {
+        const rP = find(`${dev.id}_P`), rN = find(`${dev.id}_N`);
+        dev.state.powered = [...dcP_roots].includes(rP) && [...dcN_roots].includes(rN);
+        document.getElementById(dev.id).classList.toggle('module-active-dc', dev.state.powered);
+      }
+
+      if (dev.type === 'sensor_npn' || dev.type === 'sensor_pnp') {
+        const rP = find(`${dev.id}_BRN`), rN = find(`${dev.id}_BLU`);
+        dev.state.powered = [...dcP_roots].includes(rP) && [...dcN_roots].includes(rN);
+        document.getElementById(dev.id).classList.toggle('module-active-dc', dev.state.powered);
+      }
+
+      if (dev.type === 'alarm_ac') {
+        const r1 = find(`${dev.id}_L`), r2 = find(`${dev.id}_N`);
+        const lit = ([...acL_roots].includes(r1) && [...acN_roots].includes(r2)) || ([...acL_roots].includes(r2) && [...acN_roots].includes(r1));
+        document.getElementById(`${dev.id}_dome`).classList.toggle('lit-red', lit);
+        document.getElementById(dev.id).classList.toggle('module-active-alarm', lit);
+      }
+
+      if (dev.type === 'alarm_dc') {
+        const rP = find(`${dev.id}_P`), rN = find(`${dev.id}_N`);
+        const lit = [...dcP_roots].includes(rP) && [...dcN_roots].includes(rN);
+        document.getElementById(`${dev.id}_dome`).classList.toggle('lit-red', lit);
+        document.getElementById(dev.id).classList.toggle('module-active-alarm', lit);
+      }
+
+      if (dev.type === 'tower_2c_ac' || dev.type === 'tower_3c_ac') {
+        const comRoot = find(`${dev.id}_COM`);
+        const isComN = [...acN_roots].includes(comRoot);
+        const isComL = [...acL_roots].includes(comRoot);
+        if (isComN || isComL) {
+          const liveRoots = isComN ? acL_roots : acN_roots;
+          const litR = liveRoots.has(find(`${dev.id}_R`));
+          const litG = liveRoots.has(find(`${dev.id}_G`));
+          document.getElementById(`${dev.id}_tier_r`)?.classList.toggle('lit', litR);
+          document.getElementById(`${dev.id}_tier_g`)?.classList.toggle('lit', litG);
+          if (dev.type === 'tower_3c_ac') {
+            const litY = liveRoots.has(find(`${dev.id}_Y`));
+            document.getElementById(`${dev.id}_tier_y`)?.classList.toggle('lit', litY);
+          }
+        }
+      }
+
+      if (dev.type === 'tower_2c_dc' || dev.type === 'tower_3c_dc') {
+        const comRoot = find(`${dev.id}_COM`);
+        if (dcN_roots.has(comRoot)) {
+          const litR = dcP_roots.has(find(`${dev.id}_R`));
+          const litG = dcP_roots.has(find(`${dev.id}_G`));
+          document.getElementById(`${dev.id}_tier_r`)?.classList.toggle('lit', litR);
+          document.getElementById(`${dev.id}_tier_g`)?.classList.toggle('lit', litG);
+          if (dev.type === 'tower_3c_dc') {
+            const litY = dcP_roots.has(find(`${dev.id}_Y`));
+            document.getElementById(`${dev.id}_tier_y`)?.classList.toggle('lit', litY);
+          }
+        }
+      }
+    });
+
+    if (!stateChanged && pass > 0) {
+      updateWireFlowAnimations(acL_roots, acN_roots, dcP_roots, dcN_roots);
+      break;
+    }
+  }
+
+  updateTopRepairButton();
+}
+
+function updateTopRepairButton() {
+  const btn = document.getElementById('btn-repair-top');
+  if (!btn) return;
+  const burnedCount = Object.values(devices).filter(d => d.burned).length;
+  const isMobile = window.innerWidth <= 768;
+  if (burnedCount > 0) {
+    btn.classList.add('has-burned');
+    btn.innerHTML = `🚨 <span class="pc-only-text">소손 복구</span><span class="mobile-only-text">복구</span> (${burnedCount})`;
+  } else {
+    btn.classList.remove('has-burned');
+    btn.innerHTML = `🔧 <span class="pc-only-text">복구</span><span class="mobile-only-text">복구</span>`;
+  }
+}
+
+function updateWireFlowAnimations(acL_roots, acN_roots, dcP_roots, dcN_roots) {
+  wires.forEach(w => {
+    const core = document.getElementById(`core_${w.id}`);
+    if (!core) return;
+
+    core.classList.remove('wire-flowing-fwd', 'wire-flowing-rev');
+
+    const isFromHigh = [...acL_roots, ...dcP_roots].some(r => w.from.includes(r) || w.from === r);
+    const isToLow = [...acN_roots, ...dcN_roots].some(r => w.to.includes(r) || w.to === r);
+
+    const isToHigh = [...acL_roots, ...dcP_roots].some(r => w.to.includes(r) || w.to === r);
+    const isFromLow = [...acN_roots, ...dcN_roots].some(r => w.from.includes(r) || w.from === r);
+
+    if (isFromHigh || isToLow) {
+      core.classList.add('wire-flowing-fwd');
+    } else if (isToHigh || isFromLow) {
+      core.classList.add('wire-flowing-rev');
+    }
+  });
+}
+
+function triggerScreenFlash() {
+  const flash = document.getElementById('nuclear-flash-screen');
+  if (!flash) return;
+  flash.style.opacity = '0.98';
+  setTimeout(() => { flash.style.opacity = '0'; }, 90);
+}
+
+function triggerBoardEarthquake() {
+  const board = document.getElementById('board-container');
+  if (!board) return;
+  board.classList.remove('mega-earthquake');
+  void board.offsetWidth;
+  board.classList.add('mega-earthquake');
+  setTimeout(() => board.classList.remove('mega-earthquake'), 950);
+}
+
+function triggerMassiveAcShortCircuit() {
+  playMegaShortBlastSound();
+  triggerScreenFlash();
+  triggerBoardEarthquake();
+  showToast(`🚨 [대참사] AC 220V 대단락 폭발! 차단기가 아크 플래시와 함께 트립되었습니다!`);
+
+  Object.values(devices).filter(d => d.type === 'mcb').forEach(mcb => {
+    mcb.state.closed = false;
+    const btn = document.getElementById(`${mcb.id}_btn`);
+    const txt = document.getElementById(`${mcb.id}_txt`);
+    const card = document.getElementById(mcb.id);
+
+    if (btn) {
+      btn.textContent = "차단 (TRIP ⚡)";
+      btn.className = "ui-toggle-btn active-trip";
+    }
+    if (txt) txt.textContent = "트립 차단됨";
+    if (card) {
+      card.classList.add('trip-shake');
+      setTimeout(() => card.classList.remove('trip-shake'), 450);
+      spawnCatastrophicDetonation(mcb.x + mcb.width / 2, mcb.y + mcb.height / 2, true);
+    }
+  });
+
+  document.querySelectorAll('.module-active-ac, .module-active-dc, .module-active-mc, .module-active-alarm').forEach(el => {
+    el.classList.remove('module-active-ac', 'module-active-dc', 'module-active-mc', 'module-active-alarm');
+  });
+}
+
+function triggerCatastrophicBurnout(devId, customMsg = null) {
+  const dev = devices[devId];
+  if (!dev || dev.burned) return;
+
+  dev.burned = true;
+  playCatastrophicExplosionSound();
+  triggerScreenFlash();
+  triggerBoardEarthquake();
+
+  showToast(customMsg || `💥 [기구 폭발 파괴] ${dev.name}에 과전압이 인가되어 산산조각났습니다!`);
+
+  const card = document.getElementById(devId);
+  if (card) {
+    const overlay = document.createElement('div');
+    overlay.className = 'burned-overlay';
+    overlay.innerHTML = `
+      <button class="btn-single-repair" onclick="repairSingleDevice('${devId}')">🔧 새 부품으로 교체 (복구)</button>
+      <span>🔥</span>
+      <div style="text-align:center;">
+        <div style="font-size:12px;font-weight:900;color:#ef4444;">폭발 소손 파괴됨</div>
+        <div style="font-size:9.5px;color:#fca5a5;font-weight:700;">치명적 오결선 과전압 파괴</div>
+      </div>
+      <button class="btn-single-repair" onclick="repairSingleDevice('${devId}')">🔧 이 기구만 복구</button>
+    `;
+    card.appendChild(overlay);
+  }
+
+  const cx = dev.x + dev.width / 2;
+  const cy = dev.y + dev.height / 2;
+  spawnCatastrophicDetonation(cx, cy, false);
+}
+
+const canvas = document.getElementById('fx-canvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+let shockwaves = [];
+let lightningArcs = [];
+
+function resizeCanvas() {
+  if (!canvas || !canvas.parentElement) return;
+  canvas.width = canvas.parentElement.clientWidth;
+  canvas.height = canvas.parentElement.clientHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function spawnCatastrophicDetonation(x, y, isElectricArc = false) {
+  shockwaves.push({ x, y, r: 10, maxR: 580, alpha: 1.0, color: '#ffffff', width: 14 });
+  shockwaves.push({ x, y, r: 6, maxR: 480, alpha: 0.95, color: isElectricArc ? '#38bdf8' : '#f97316', width: 10 });
+  shockwaves.push({ x, y, r: 2, maxR: 360, alpha: 0.85, color: isElectricArc ? '#a855f7' : '#ef4444', width: 7 });
+
+  for (let l = 0; l < (isElectricArc ? 12 : 7); l++) {
+    const angle = (Math.PI * 2 / 8) * l + (Math.random() - 0.5) * 0.5;
+    const length = 140 + Math.random() * 220;
+    const segments = [];
+    let curX = x, curY = y;
+    const steps = 8;
+    for (let s = 0; s < steps; s++) {
+      const segLen = length / steps;
+      curX += Math.cos(angle) * segLen + (Math.random() - 0.5) * 28;
+      curY += Math.sin(angle) * segLen + (Math.random() - 0.5) * 28;
+      segments.push({ x: curX, y: curY });
+    }
+    lightningArcs.push({
+      startX: x, startY: y, segments,
+      alpha: 1.0, decay: 0.04 + Math.random() * 0.03,
+      color: isElectricArc ? '#38bdf8' : '#fde047'
+    });
+  }
+
+  for (let i = 0; i < 180; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 4 + Math.random() * 16;
+    const isDebris = Math.random() < 0.25;
+    particles.push({
+      x: x + (Math.random() - 0.5) * 16,
+      y: y + (Math.random() - 0.5) * 16,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - (isDebris ? 2 : 0),
+      gravity: 0.18,
+      life: 1.0,
+      decay: 0.012 + Math.random() * 0.022,
+      color: isDebris ? '#cbd5e1' : (Math.random() > 0.4 ? '#fbbf24' : (Math.random() > 0.5 ? '#f97316' : '#ffffff')),
+      size: isDebris ? (4 + Math.random() * 6) : (2 + Math.random() * 5),
+      isDebris: isDebris
+    });
+  }
+
+  for (let f = 0; f < 140; f++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 1.5 + Math.random() * 9;
+    const isMushroomStem = Math.random() < 0.38;
+    particles.push({
+      x: x + (Math.random() - 0.5) * 30,
+      y: y + (Math.random() - 0.5) * 30,
+      vx: isMushroomStem ? (Math.random() - 0.5) * 3.5 : Math.cos(angle) * speed,
+      vy: isMushroomStem ? -(5 + Math.random() * 9) : Math.sin(angle) * speed - 3.5,
+      gravity: -0.05,
+      life: 1.0,
+      decay: 0.008 + Math.random() * 0.014,
+      color: Math.random() > 0.6 ? '#f97316' : (Math.random() > 0.4 ? '#ef4444' : (Math.random() > 0.3 ? '#fbbf24' : '#475569')),
+      size: 14 + Math.random() * 26,
+      isFireball: true
+    });
+  }
+}
+
+function fxLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (let i = lightningArcs.length - 1; i >= 0; i--) {
+    const arc = lightningArcs[i];
+    arc.alpha -= arc.decay;
+    if (arc.alpha <= 0) {
+      lightningArcs.splice(i, 1);
+      continue;
+    }
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(arc.startX, arc.startY);
+    arc.segments.forEach(pt => ctx.lineTo(pt.x, pt.y));
+    ctx.strokeStyle = arc.color;
+    ctx.globalAlpha = arc.alpha;
+    ctx.lineWidth = 3 + arc.alpha * 4;
+    ctx.shadowColor = arc.color;
+    ctx.shadowBlur = 15;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  for (let i = shockwaves.length - 1; i >= 0; i--) {
+    const sw = shockwaves[i];
+    sw.r += (sw.maxR - sw.r) * 0.14;
+    sw.alpha -= 0.035;
+    if (sw.alpha <= 0) {
+      shockwaves.splice(i, 1);
+      continue;
+    }
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(sw.x, sw.y, sw.r, 0, Math.PI * 2);
+    ctx.strokeStyle = sw.color;
+    ctx.globalAlpha = sw.alpha;
+    ctx.lineWidth = sw.width * sw.alpha;
+    ctx.shadowColor = sw.color;
+    ctx.shadowBlur = 20;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    if (p.gravity) p.vy += p.gravity;
+    p.life -= p.decay;
+
+    if (p.life <= 0) {
+      particles.splice(i, 1);
+      continue;
+    }
+
+    ctx.save();
+    ctx.beginPath();
+    const curRadius = p.size * (p.isFireball ? (1 + (1 - p.life) * 1.5) : p.life);
+    ctx.arc(p.x, p.y, Math.max(0.5, curRadius), 0, Math.PI * 2);
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = Math.max(0, p.life);
+
+    if (!p.isDebris) {
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur = p.isFireball ? 18 : 8;
+    }
+    ctx.fill();
+    ctx.restore();
+  }
+
+  requestAnimationFrame(fxLoop);
+}
+requestAnimationFrame(fxLoop);
+
+function repairSingleDevice(devId) {
+  const dev = devices[devId];
+  if (!dev) return;
+  dev.burned = false;
+  const card = document.getElementById(devId);
+  if (card) {
+    card.querySelectorAll('.burned-overlay').forEach(ov => ov.remove());
+  }
+  playClickSound();
+  showToast(`[${dev.name}] 새 부품으로 교체 복구 완료!`);
+  evaluateCircuit();
+}
+
+function repairAllBurned() {
+  const burnedList = Object.values(devices).filter(d => d.burned);
+  if (burnedList.length === 0) {
+    showToast("현재 소손된 부품이 없습니다.");
+    return;
+  }
+  burnedList.forEach(dev => {
+    dev.burned = false;
+    const card = document.getElementById(dev.id);
+    if (card) {
+      card.querySelectorAll('.burned-overlay').forEach(ov => ov.remove());
+    }
+  });
+  playClickSound();
+  showToast(`소손된 모든 부품(${burnedList.length}개)이 일괄 복구되었습니다.`);
+  evaluateCircuit();
+}
+
+function resetBoard() {
+  const mountPoint = document.getElementById('device-mount-point');
+  if (mountPoint) mountPoint.innerHTML = '';
+  devices = {};
+  wires = [];
+  deviceCounter = 0;
+  wireCounter = 0;
+  undoStack = [];
+  updateUndoButton();
+  cancelPendingWire();
+  if (isCutMode) toggleCutMode(false);
+  renderWires();
+
+  const isMobile = window.innerWidth <= 768;
+  if (isMobile) {
+    spawnDevice('outlet', 20, 20);
+    spawnDevice('mcb', 20, 250);
+  } else {
+    spawnDevice('outlet', 60, 60);
+    spawnDevice('mcb', 320, 60);
+  }
+
+  showToast(`제어반 초기화 완료.`);
+}
+
+/* 🚀 즉각 부팅 로직 */
+function bootSimulator() {
+  initColorPaletteBar();
+  resetBoard();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootSimulator);
+} else {
+  bootSimulator();
+}
+</script>
+</body>
+</html>
